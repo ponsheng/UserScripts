@@ -14,15 +14,30 @@ const section_selector = "div.Xpzj7";
 const row_selector = "div._2GJb6";
 const skill_selector = "div.Af4up";
 const completed_skill_selector = "div.Af4up div.ewiWc";
+const div_prepend_btn_selector = ".i12-l";
 
-// TODO fail when enter with duolingo
-// TODO fail when exit from class no mutaion detected
+var target_body;
 
-var target;
+function HideNode(node) {
+    node.hide();
+}
 
+function ShowNode(node) {
+    node.show();
+}
+
+function Toggle (target) {
+    var ret;
+    if (IsHiding) {
+        ret = ActOnTarget(target, HideNode);
+    } else {
+        ret = ActOnTarget(target, ShowNode);
+    }
+    return ret;
+}
 
 // Show / hide completed sections depends on 'IsHiding'
-function Toggle(target) {
+function ActOnTarget(target, action) {
     var total_count = 0;
     // Hide sections
     var sections = $(section_selector);
@@ -38,43 +53,17 @@ function Toggle(target) {
             var skill_count = $(this).find(skill_selector).length;
             var complete_count = $(this).find(completed_skill_selector).length;
             if (skill_count == complete_count) {
-                if (IsHiding) {
-                    $(this).hide();
-                } else {
-                    $(this).show();
-                }
+                action($(this));
                 row_count += 1;
             }
         });
         if (rows.length == row_count && rows.length > 0) {
-            if (IsHiding) {
-                $(this).hide();
-            } else {
-                $(this).show();
-            }
+            action($(this));
             total_count += 1;
         }
         total_count += row_count;
     });
     return total_count;
-}
-
-function CountCompleted(node) {
-    return node.find(completed_skill_selector).length;
-}
-
-function InsertBtn() {
-    if ($('#myButton').length != 0) {
-        //console.log("Button had been inserted");
-        return;
-    }
-    var node = document.createElement ('div');
-    node.innerHTML = '<button id="myButton" type="button">Toggle hide/show completed skills!</button>';
-    node.setAttribute ('id', 'myContainer');
-    $(".i12-l")[0].prepend(node);
-    $("#myButton").on( "click", ButtonClickAction);
-    console.log("Inserted toggle button");
-    $('html, body').animate({ scrollTop: 0 }, 'fast');
 }
 
 function ButtonClickAction (BtnEvent) {
@@ -83,49 +72,60 @@ function ButtonClickAction (BtnEvent) {
     } else {
         IsHiding = true;
     }
-    Toggle($('body')[0]);
+    Toggle(target_body);
+}
+
+function InsertBtn() {
+    if ($('#HCSButton').length != 0) {
+        //console.log("Button had been inserted");
+        return;
+    }
+    // TODO Add style to button
+    var node = document.createElement ('div');
+    node.innerHTML = '<button id="HCSButton" type="button">Toggle hide/show completed skills!</button>';
+    node.setAttribute ('id', 'HCSContainer');
+    $(div_prepend_btn_selector)[0].prepend(node);
+    $("#HCSButton").on( "click", ButtonClickAction);
+    console.log("Inserted toggle button");
+    // Scroll to top
+    // TODO Add button to scroll to incompleted skills
+    if (IsHiding) {
+        $('html, body').animate({ scrollTop: 0 }, 'fast');
+        console.log("ScrollTop");
+    }
 }
 
 // Callback function to execute when mutations are observed
 const ObsvrAction = function(mutationsList, observer) {
-    var IsNew = false;
+    var AddNew = false;
     // Use traditional 'for loops' for IE 11
-    for(let mutation of mutationsList) {
+    for (let mutation of mutationsList) {
         if (mutation.type === 'childList') {
             // A child node has been added or removed
             if (mutation.addedNodes.length > 0) {
-                IsNew = true;
+                AddNew = true;
             }
-            /*
-            for (var node of mutation.addedNodes) {
-                // TODO too much nodes -> cut down?
-                if (IsHiding) {
-                    hide_count += Toggle(node);
-                } else {
-                    hide_count += CountComplete(node);
-                }
-            }
-            */
         }
     }
-    if (!IsNew) {
+    if (!AddNew) {
         return ;
     }
-    if (Toggle(target) > 0) {
+    if (Toggle(target_body) > 0) {
         InsertBtn();
     }
 };
+
 // Options for the observer
 const config = {childList: true, subtree: true};
 
 const observer = new MutationObserver(ObsvrAction);
 
 $(document).ready(function() {
-    target = $('body')[0];
-    var hide_count = Toggle(target);
+    target_body = $('body')[0];
+    var hide_count = Toggle(target_body);
     if (hide_count > 0) {
         InsertBtn();
     }
     // Start observing the target node for configured mutations
-    observer.observe(target, config);
+    observer.observe(target_body, config);
 });
