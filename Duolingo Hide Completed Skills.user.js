@@ -10,13 +10,21 @@
 // ==/UserScript==
 
 var IsHiding = true;
+
+// Selectors
 const section_selector = "div.Xpzj7";
 const row_selector = "div._2GJb6";
 const skill_selector = "div.Af4up";
 const completed_skill_selector = "div.Af4up div.ewiWc";
 const div_prepend_btn_selector = ".i12-l";
 
+const page_url = "/learn";
+
+// Target to search skills
 var target_body;
+
+// Newest skill node
+var newest_skill;
 
 function HideNode(node) {
     node.hide();
@@ -39,14 +47,18 @@ function Toggle (target) {
 // Show / hide completed sections depends on 'IsHiding'
 function ActOnTarget(target, action) {
     var total_count = 0;
-    // Hide sections
+
+    // If newest skill in target found
+    var newest_found = false;
+
+    // Check sections
     var sections = $(section_selector);
     if (sections == null) {
         consol.log("Error, section not found");
     }
     sections.each(function(index, element) {
 
-        // Hide rows
+        // Check rows
         var rows = $(this).find(row_selector);
         var row_count = 0;
         rows.each(function(index, element) {
@@ -60,13 +72,16 @@ function ActOnTarget(target, action) {
         if (rows.length == row_count && rows.length > 0) {
             action($(this));
             total_count += 1;
+        } else if (rows.length > 0 && !newest_found) {
+            newest_found = true;
+            newest_skill = $(this);
         }
         total_count += row_count;
     });
     return total_count;
 }
 
-function ButtonClickAction (BtnEvent) {
+function ToggleBtnClickAction (BtnEvent) {
     if (IsHiding) {
         IsHiding = false;
     } else {
@@ -75,23 +90,35 @@ function ButtonClickAction (BtnEvent) {
     Toggle(target_body);
 }
 
+function ScrollBtnClickAction(BtnEvent) {
+    if (newest_skill) {
+        // TODO
+        // scroll align to center
+        newest_skill.scrollIntoView(true);
+        //newest_skill.animate({ scrollTop: 20 }, 'fast');
+        console.log("Scroll Down");
+    }
+}
+
 function InsertBtn() {
-    if ($('#HCSButton').length != 0) {
-        //console.log("Button had been inserted");
+    if ($('#HCSToggleBtn').length != 0) {
         return;
     }
     // TODO Add style to button
     var node = document.createElement ('div');
-    node.innerHTML = '<button id="HCSButton" type="button">Toggle hide/show completed skills!</button>';
+    node.innerHTML = '<button id="HCSToggleBtn" class="HCSBtn" type="button">Toggle completed skills</button>'
+        + '<span> </span>'
+        + '<button id="HCSScrollBtn" class="HCSBtn" type="button">Scroll Down</button>';
     node.setAttribute ('id', 'HCSContainer');
     $(div_prepend_btn_selector)[0].prepend(node);
-    $("#HCSButton").on( "click", ButtonClickAction);
-    console.log("Inserted toggle button");
+    $("#HCSToggleBtn").on( "click", ToggleBtnClickAction);
+    $("#HCSScrollBtn").on( "click", ScrollBtnClickAction);
+    console.log("Inserted buttons");
     // Scroll to top
-    // TODO Add button to scroll to incompleted skills
     if (IsHiding) {
+        //$('html, body')[0].scrollIntoView(true);
         $('html, body').animate({ scrollTop: 0 }, 'fast');
-        console.log("ScrollTop");
+        console.log("Scroll Top");
     }
 }
 
@@ -110,6 +137,10 @@ const ObsvrAction = function(mutationsList, observer) {
     if (!AddNew) {
         return ;
     }
+    // Use url to determine toggle or not
+    if (window.location.pathname.localeCompare(page_url) != 0) {
+        return;
+    }
     if (Toggle(target_body) > 0) {
         InsertBtn();
     }
@@ -120,6 +151,32 @@ const config = {childList: true, subtree: true};
 
 const observer = new MutationObserver(ObsvrAction);
 
+// Button css
+var styles = `
+    .HCSBtn {
+      display: inline-block;
+      padding: 6px 8px;
+      font-size: 17px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      outline: none;
+      color: #fff;
+      background-color: #1cb0f6;
+      border: none;
+      border-radius: 5px;
+      box-shadow: 0 5px #1899d6;
+    }
+
+    .HCSBtn:hover {background-color: #51c5fc;}
+
+    .HCSBtn:active {
+      background-color: #1899d6;
+      box-shadow: 0 5px #126e99;
+      transform: translateY(4px);
+    }
+`;
+
 $(document).ready(function() {
     target_body = $('body')[0];
     var hide_count = Toggle(target_body);
@@ -128,4 +185,9 @@ $(document).ready(function() {
     }
     // Start observing the target node for configured mutations
     observer.observe(target_body, config);
+
+    var styleSheet = document.createElement("style")
+    styleSheet.type = "text/css"
+    styleSheet.innerText = styles
+    document.head.appendChild(styleSheet)
 });
