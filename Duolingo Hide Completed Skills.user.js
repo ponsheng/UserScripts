@@ -67,14 +67,14 @@ function ActOnTarget(target, action) {
             if (skill_count == complete_count) {
                 action($(this));
                 row_count += 1;
+            } else if (!newest_found && skill_count > 0 ) {
+                newest_found = true;
+                newest_skill = $(this);
             }
         });
         if (rows.length == row_count && rows.length > 0) {
             action($(this));
             total_count += 1;
-        } else if (rows.length > 0 && !newest_found) {
-            newest_found = true;
-            newest_skill = $(this);
         }
         total_count += row_count;
     });
@@ -92,10 +92,10 @@ function ToggleBtnClickAction (BtnEvent) {
 
 function ScrollBtnClickAction(BtnEvent) {
     if (newest_skill) {
-        // TODO
         // scroll align to center
-        newest_skill.scrollIntoView(true);
-        //newest_skill.animate({ scrollTop: 20 }, 'fast');
+        const node_top = newest_skill[0].getBoundingClientRect().top;
+        const middle = node_top + window.pageYOffset - (window.innerHeight / 2);
+        window.scrollTo(0, middle);
         console.log("Scroll Down");
     }
 }
@@ -104,7 +104,6 @@ function InsertBtn() {
     if ($('#HCSToggleBtn').length != 0) {
         return;
     }
-    // TODO Add style to button
     var node = document.createElement ('div');
     node.innerHTML = '<button id="HCSToggleBtn" class="HCSBtn" type="button">Toggle completed skills</button>'
         + '<span> </span>'
@@ -157,6 +156,7 @@ var styles = `
       display: inline-block;
       padding: 6px 8px;
       font-size: 17px;
+      font-weight: bold;
       cursor: pointer;
       text-align: center;
       text-decoration: none;
