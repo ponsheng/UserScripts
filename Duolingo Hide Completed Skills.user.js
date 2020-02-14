@@ -145,6 +145,8 @@ const ObsvrAction = function(mutationsList, observer) {
     }
 };
 
+// TODO auto scroll after exit from class?
+
 // Options for the observer
 const config = {childList: true, subtree: true};
 
