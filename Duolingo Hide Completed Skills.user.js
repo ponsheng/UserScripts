@@ -10,13 +10,21 @@
 // ==/UserScript==
 
 var IsHiding = true;
+var IsDebug = false;
 
 // Selectors
 const section_selector = "div.Xpzj7";
 const row_selector = "div._2GJb6";
 const skill_selector = "div.Af4up";
-const completed_skill_selector = "div.Af4up div.ewiWc";
+const completed_skill_selector = "div.Af4up div.ad-OG";//.ewiWc";
 const div_prepend_btn_selector = ".i12-l";
+
+const selectors = [
+    'section_selector', section_selector,
+    'row_selector', row_selector,
+    'completed_skill_selector', completed_skill_selector,
+    'div_prepend_btn_selector', div_prepend_btn_selector
+];
 
 const page_url = "/learn";
 
@@ -179,7 +187,24 @@ var styles = `
     }
 `;
 
+
+function CheckSelector() {
+    if (window.location.pathname.localeCompare(page_url) != 0) {
+        return;
+    }
+    var i;
+    for (i = 0; i < selectors.length; i+=2) {
+        var name = selectors[i];
+        var selector = selectors[i+1];
+
+        if ($(selector).length == 0) {
+            console.log(name + " selector not found");
+        }
+    }
+}
+
 $(document).ready(function() {
+    console.log("Duolingo HCS enabled");
     target_body = $('body')[0];
     var hide_count = Toggle(target_body);
     if (hide_count > 0) {
@@ -192,4 +217,9 @@ $(document).ready(function() {
     styleSheet.type = "text/css"
     styleSheet.innerText = styles
     document.head.appendChild(styleSheet)
+
+    // Check selector changed
+    if (debug) {
+        var timer = setInterval(CheckSelector, 60000);
+    }
 });
