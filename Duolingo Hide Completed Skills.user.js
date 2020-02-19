@@ -102,7 +102,7 @@ function ScrollBtnClickAction(BtnEvent) {
     if (newest_skill) {
         // scroll align to center
         const node_top = newest_skill[0].getBoundingClientRect().top;
-        const middle = node_top + window.pageYOffset - (window.innerHeight / 2);
+        const middle = node_top + window.pageYOffset - (window.innerHeight / 4);
         window.scrollTo(0, middle);
         console.log("Scroll Down");
     }
