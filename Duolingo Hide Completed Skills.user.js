@@ -219,7 +219,7 @@ $(document).ready(function() {
     document.head.appendChild(styleSheet)
 
     // Check selector changed
-    if (debug) {
+    if (IsDebug) {
         var timer = setInterval(CheckSelector, 60000);
     }
 });
