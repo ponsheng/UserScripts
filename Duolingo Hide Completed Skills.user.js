@@ -17,13 +17,13 @@ const section_selector = "div.Xpzj7";
 const row_selector = "div._2GJb6";
 const skill_selector = "div.Af4up";
 const completed_skill_selector = "div.Af4up div.ad-OG";//.ewiWc";
-const div_prepend_btn_selector = ".i12-l";
+const prepend_btn_selector = "div.i12-l";
 
 const selectors = [
     'section_selector', section_selector,
     'row_selector', row_selector,
     'completed_skill_selector', completed_skill_selector,
-    'div_prepend_btn_selector', div_prepend_btn_selector
+    'prepend_btn_selector', prepend_btn_selector
 ];
 
 const page_url = "/learn";
@@ -117,7 +117,7 @@ function InsertBtn() {
         + '<span> </span>'
         + '<button id="HCSScrollBtn" class="HCSBtn" type="button">Scroll Down</button>';
     node.setAttribute ('id', 'HCSContainer');
-    $(div_prepend_btn_selector)[0].prepend(node);
+    $(prepend_btn_selector)[0].prepend(node);
     $("#HCSToggleBtn").on( "click", ToggleBtnClickAction);
     $("#HCSScrollBtn").on( "click", ScrollBtnClickAction);
     console.log("Inserted buttons");
