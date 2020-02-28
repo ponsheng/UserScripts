@@ -98,28 +98,15 @@ function ToggleBtnClickAction (BtnEvent) {
     Toggle(target_body);
 }
 
-function ScrollBtnClickAction(BtnEvent) {
-    if (newest_skill) {
-        // scroll align to center
-        const node_top = newest_skill[0].getBoundingClientRect().top;
-        const middle = node_top + window.pageYOffset - (window.innerHeight / 4);
-        window.scrollTo(0, middle);
-        console.log("Scroll Down");
-    }
-}
-
 function InsertBtn() {
     if ($('#HCSToggleBtn').length != 0) {
         return;
     }
     var node = document.createElement ('div');
-    node.innerHTML = '<button id="HCSToggleBtn" class="HCSBtn" type="button">Toggle completed skills</button>'
-        + '<span> </span>'
-        + '<button id="HCSScrollBtn" class="HCSBtn" type="button">Scroll Down</button>';
+    node.innerHTML = '<button id="HCSToggleBtn" class="HCSBtn" type="button">Toggle completed skills</button>';
     node.setAttribute ('id', 'HCSContainer');
     $(prepend_btn_selector)[0].prepend(node);
     $("#HCSToggleBtn").on( "click", ToggleBtnClickAction);
-    $("#HCSScrollBtn").on( "click", ScrollBtnClickAction);
     console.log("Inserted buttons");
     // Scroll to top
     if (IsHiding) {
