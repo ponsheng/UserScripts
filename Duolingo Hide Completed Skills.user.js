@@ -12,17 +12,19 @@
 var IsHiding = true;
 var IsDebug = false;
 
+// TODO There is a bug when complete a skill, it just disapear with another incomplete skill.
+
 // Selectors
-const section_selector = "div.Xpzj7";
-const row_selector = "div._2GJb6";
-const skill_selector = "div.Af4up";
-const completed_skill_selector = "div.Af4up div.ad-OG";//.ewiWc";
-const prepend_btn_selector = "div.i12-l";
+const section_selector = "div[data-test='tree-section']";
+const row_selector = "div._29Bml";
+const skill_selector = "div[data-test='skill']";
+const skill_crown_selector = skill_selector + " div[data-test='level-crown']";
+const prepend_btn_selector = "div[data-test='skill-tree']";
 
 const selectors = [
     'section_selector', section_selector,
     'row_selector', row_selector,
-    'completed_skill_selector', completed_skill_selector,
+    'skill_crown_selector', skill_crown_selector,
     'prepend_btn_selector', prepend_btn_selector
 ];
 
@@ -32,6 +34,7 @@ const page_url = "/learn";
 var target_body;
 
 // Newest skill node
+// FIXME what's this for
 var newest_skill;
 
 function HideNode(node) {
@@ -68,23 +71,40 @@ function ActOnTarget(target, action) {
 
         // Check rows
         var rows = $(this).find(row_selector);
-        var row_count = 0;
+        var hide_row_count = 0;
         rows.each(function(index, element) {
             var skill_count = $(this).find(skill_selector).length;
-            var complete_count = $(this).find(completed_skill_selector).length;
-            if (skill_count == complete_count) {
+            var crowns = $(this).find(skill_crown_selector);
+            var crown_count = crowns.length;
+            var completed_count = 0;
+
+            if (crown_count > skill_count) {
+                console.log("Error, crown is more than skills");
+            } else if (crown_count == 0) {
+                // same as continue
+                return;
+            }
+            //console.log("skill: " + skill_count + ", crown_count: " + crown_count);
+            // Check all crown is level 5
+            crowns.each(function(index, element) {
+                var str = element.innerHTML.replace(/\s/g, '');;
+                if (str == "5") {
+                    completed_count++;
+                }
+            });
+            if (completed_count == skill_count) {
                 action($(this));
-                row_count += 1;
+                hide_row_count += 1;
             } else if (!newest_found && skill_count > 0 ) {
                 newest_found = true;
                 newest_skill = $(this);
             }
         });
-        if (rows.length == row_count && rows.length > 0) {
-            action($(this));
+        if (rows.length == hide_row_count && rows.length > 0) {
+            //action($(this));
             total_count += 1;
         }
-        total_count += row_count;
+        total_count += hide_row_count;
     });
     return total_count;
 }
@@ -174,19 +194,29 @@ var styles = `
     }
 `;
 
+var debug_callback;
 
 function CheckSelector() {
     if (window.location.pathname.localeCompare(page_url) != 0) {
         return;
     }
     var i;
+    var err = false;
     for (i = 0; i < selectors.length; i+=2) {
         var name = selectors[i];
         var selector = selectors[i+1];
+        var count = $(selector).length;
 
-        if ($(selector).length == 0) {
+        if (count == 0) {
             console.log(name + " selector not found");
+            err = true;
         }
+    }
+    if (err == true) {
+        clearInterval(debug_callback);
+        console.log("End debug_callback");
+    } else {
+        console.log("Selectors seems fine");
     }
 }
 
@@ -207,6 +237,7 @@ $(document).ready(function() {
 
     // Check selector changed
     if (IsDebug) {
-        var timer = setInterval(CheckSelector, 60000);
+        debug_callback = setInterval(CheckSelector, 60000);
+        console.log("HCS debuging css selector");
     }
 });
