@@ -21,6 +21,7 @@ const section_selector = "div[data-test='tree-section']";
 const skill_selector = "div[data-test='skill']";
 const skill_crown_selector = skill_selector + " div[data-test='level-crown']";
 const prepend_btn_selector = "div[data-test='skill-tree']";
+const skill_tree_selector = prepend_btn_selector;
 
 const selectors = [
     'section_selector', section_selector,
@@ -162,7 +163,7 @@ const ObsvrAction = function(mutationsList, observer) {
 // TODO auto scroll after exit from class?
 
 // Options for the observer
-const config = {childList: true, subtree: true};
+const observer_config = {childList: true, subtree: true};
 
 const observer = new MutationObserver(ObsvrAction);
 
@@ -222,12 +223,23 @@ function CheckSelector() {
 $(document).ready(function() {
     console.log("Duolingo HCS enabled");
     target_body = $('body')[0];
+    // FIXME target to skill_tree
+    /*
+     * TODO observe skill_tree_selector,
+     * NOTE
+     *      the node may not be there after a lesson -> fail
+     *      the node is not there when ready, use a tracker monitor on body??
+    body = $('body');
+    target_body = body.find(skill_tree_selector).get(0);
+    console.log(target_body);
+    return;
+    */
     var hide_count = Toggle(target_body);
     if (hide_count > 0) {
         InsertBtn();
     }
     // Start observing the target node for configured mutations
-    observer.observe(target_body, config);
+    observer.observe(target_body, observer_config);
 
     var styleSheet = document.createElement("style")
     styleSheet.type = "text/css"
