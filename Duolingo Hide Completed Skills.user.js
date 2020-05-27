@@ -32,6 +32,9 @@ const selectors = [
 
 const page_url = "/learn";
 
+// Options for the observer
+const observer_config = {childList: true, subtree: true};
+
 // Target to search skills
 var target_body;
 
@@ -151,6 +154,10 @@ const ObsvrAction = function(mutationsList, observer) {
             if (mutation.addedNodes.length > 0) {
                 AddNew = true;
             }
+            if (mutation.removedNodes) {
+                // TODO detect the node is deleted
+                // https://stackoverflow.com/questions/44935865/detect-when-a-node-is-deleted-or-removed-from-the-dom-because-a-parent-was
+            }
         }
     }
     if (!AddNew) {
@@ -167,10 +174,7 @@ const ObsvrAction = function(mutationsList, observer) {
 
 // TODO auto scroll after exit from class?
 
-// Options for the observer
-const observer_config = {childList: true, subtree: true};
-
-const observer = new MutationObserver(ObsvrAction);
+var observer = new MutationObserver(ObsvrAction);
 
 // Button css
 var styles = `
@@ -228,14 +232,14 @@ function CheckSelector() {
 //$(document).ready(function() {
 $( window ).on( "load", function() {
     mylog("Duolingo HCS enabled");
-    //target_body = $('body')[0];
+    target_body = $('body')[0];
 
     /*
      * FIXME observe skill_tree_selector,
-     * NOTE
-     *      the node may not be there after a lesson -> fail
-     *      the node is not there when ready, use a tracker monitor on body??
+     *      the node changed after a lesson
+     *      FIX ObsvrAction first
      */
+    /*
     body = $('body');
     var skill_tree = body.find(skill_tree_selector);
     // Fail safe
@@ -250,6 +254,7 @@ $( window ).on( "load", function() {
     if (hide_count > 0) {
         InsertBtn();
     }
+    */
     // Start observing the target node for configured mutations
     observer.observe(target_body, observer_config);
 
