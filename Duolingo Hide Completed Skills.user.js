@@ -46,6 +46,11 @@ function ShowNode(node) {
     node.show();
 }
 
+function mylog(s) {
+    // TODO
+    console.log("[HCS] " + s);
+}
+
 function Toggle (target) {
     var t0 = performance.now()
     var ret;
@@ -55,7 +60,7 @@ function Toggle (target) {
         ret = ActOnTarget(target, ShowNode);
     }
     var t1 = performance.now()
-    console.log("Call to HCS Toggle took " + (t1 - t0) + " milliseconds.")
+    mylog("Call to HCS Toggle took " + (t1 - t0) + " milliseconds.")
     return ret;
 }
 
@@ -70,7 +75,7 @@ function IsAllSkillComplete(node) {
             completed_skills++;
         }
     });
-    //console.log("skills: " + all_skills + ", 5-crown_count: " + completed_skills);
+    //mylog("skills: " + all_skills + ", 5-crown_count: " + completed_skills);
     if (all_skills == completed_skills) {
         return true;
     }
@@ -127,12 +132,12 @@ function InsertBtn() {
     node.setAttribute ('id', 'HCSContainer');
     $(prepend_btn_selector)[0].prepend(node);
     $("#HCSToggleBtn").on( "click", ToggleBtnClickAction);
-    console.log("Inserted buttons");
+    mylog("Inserted buttons");
     // Scroll to top
     if (IsHiding) {
         //$('html, body')[0].scrollIntoView(true);
         $('html, body').animate({ scrollTop: 0 }, 'fast');
-        console.log("Scroll Top");
+        mylog("Scroll Top");
     }
 }
 
@@ -208,32 +213,39 @@ function CheckSelector() {
         var count = $(selector).length;
 
         if (count == 0) {
-            console.log(name + " selector not found");
+            mylog(name + " selector not found");
             err = true;
         }
     }
     if (err == true) {
         clearInterval(debug_callback);
-        console.log("End debug_callback");
+        mylog("End debug_callback");
     } else {
-        console.log("Selectors seems fine");
+        mylog("Selectors seems fine");
     }
 }
 
-$(document).ready(function() {
-    console.log("Duolingo HCS enabled");
-    target_body = $('body')[0];
-    // FIXME target to skill_tree
+//$(document).ready(function() {
+$( window ).on( "load", function() {
+    mylog("Duolingo HCS enabled");
+    //target_body = $('body')[0];
+
     /*
-     * TODO observe skill_tree_selector,
+     * FIXME observe skill_tree_selector,
      * NOTE
      *      the node may not be there after a lesson -> fail
      *      the node is not there when ready, use a tracker monitor on body??
+     */
     body = $('body');
+    var skill_tree = body.find(skill_tree_selector);
+    // Fail safe
+    if (skill_tree.length == 0) {
+        mylog("no skill tree found" + skill_tree_selector);
+        mylog("Abort!");
+        return;
+    }
     target_body = body.find(skill_tree_selector).get(0);
-    console.log(target_body);
-    return;
-    */
+
     var hide_count = Toggle(target_body);
     if (hide_count > 0) {
         InsertBtn();
@@ -249,6 +261,6 @@ $(document).ready(function() {
     // Check selector changed
     if (IsDebug) {
         debug_callback = setInterval(CheckSelector, 60000);
-        console.log("HCS debuging css selector");
+        mylog("HCS debuging css selector");
     }
 });
