@@ -13,17 +13,18 @@ var IsHiding = true;
 var IsDebug = false;
 
 // TODO There is a bug when complete a skill, it just disapear with another incomplete skill.
+//          > seems not happened for I times
+// TODO Reduce monitor sensitivity, reduce check call
 
 // Selectors
 const section_selector = "div[data-test='tree-section']";
-const row_selector = "div._29Bml";
 const skill_selector = "div[data-test='skill']";
 const skill_crown_selector = skill_selector + " div[data-test='level-crown']";
 const prepend_btn_selector = "div[data-test='skill-tree']";
 
 const selectors = [
     'section_selector', section_selector,
-    'row_selector', row_selector,
+    'skill_selector', skill_selector,
     'skill_crown_selector', skill_crown_selector,
     'prepend_btn_selector', prepend_btn_selector
 ];
@@ -40,23 +41,44 @@ var newest_skill;
 function HideNode(node) {
     node.hide();
 }
-
 function ShowNode(node) {
     node.show();
 }
 
 function Toggle (target) {
+    var t0 = performance.now()
     var ret;
     if (IsHiding) {
         ret = ActOnTarget(target, HideNode);
     } else {
         ret = ActOnTarget(target, ShowNode);
     }
+    var t1 = performance.now()
+    console.log("Call to HCS Toggle took " + (t1 - t0) + " milliseconds.")
     return ret;
+}
+
+function IsAllSkillComplete(node) {
+    var all_skills = node.find(skill_selector).length;
+    var crowns = node.find(skill_crown_selector);
+    var completed_skills = 0;
+    crowns.each(function(index, element) {
+        // Get crown level of each skill
+        var str = element.innerHTML.replace(/\s/g, '');;
+        if (str == "5") {
+            completed_skills++;
+        }
+    });
+    //console.log("skills: " + all_skills + ", 5-crown_count: " + completed_skills);
+    if (all_skills == completed_skills) {
+        return true;
+    }
+    return false;
 }
 
 // Show / hide completed sections depends on 'IsHiding'
 function ActOnTarget(target, action) {
+    // TODO Add timing
     var total_count = 0;
 
     // If newest skill in target found
@@ -68,43 +90,20 @@ function ActOnTarget(target, action) {
         consol.log("Error, section not found");
     }
     sections.each(function(index, element) {
-
-        // Check rows
-        var rows = $(this).find(row_selector);
-        var hide_row_count = 0;
-        rows.each(function(index, element) {
-            var skill_count = $(this).find(skill_selector).length;
-            var crowns = $(this).find(skill_crown_selector);
-            var crown_count = crowns.length;
-            var completed_count = 0;
-
-            if (crown_count > skill_count) {
-                console.log("Error, crown is more than skills");
-            } else if (crown_count == 0) {
-                // same as continue
-                return;
-            }
-            //console.log("skill: " + skill_count + ", crown_count: " + crown_count);
-            // Check all crown is level 5
-            crowns.each(function(index, element) {
-                var str = element.innerHTML.replace(/\s/g, '');;
-                if (str == "5") {
-                    completed_count++;
-                }
-            });
-            if (completed_count == skill_count) {
-                action($(this));
-                hide_row_count += 1;
-            } else if (!newest_found && skill_count > 0 ) {
-                newest_found = true;
-                newest_skill = $(this);
-            }
-        });
-        if (rows.length == hide_row_count && rows.length > 0) {
-            //action($(this));
+        if (IsAllSkillComplete($(this))) {
+            action($(this));
             total_count += 1;
+            return;
         }
-        total_count += hide_row_count;
+        // Hide parent (row) if parent's child are all completed
+        var all_skills = $(this).find(skill_selector)
+        all_skills.each(function(index, element) {
+            var parent_row = $(this).parent();
+            if (IsAllSkillComplete(parent_row)) {
+                action(parent_row);
+            }
+            total_count += 1
+        });
     });
     return total_count;
 }
