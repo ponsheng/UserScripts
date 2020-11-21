@@ -11,23 +11,31 @@
 
 var IsHiding = true;
 var IsDebug = false;
+var IsDP    = false; // debug print
 
 // TODO There is a bug when complete a skill, it just disapear with another incomplete skill.
 //          > seems not happened for I times
 // TODO Reduce monitor sensitivity, reduce check call
 
 // Selectors
-const section_selector = "div[data-test='tree-section']";
-const skill_selector = "div[data-test='skill']";
-const skill_crown_selector = skill_selector + " div[data-test='level-crown']";
-const prepend_btn_selector = "div[data-test='skill-tree']";
-const skill_tree_selector = prepend_btn_selector;
+const section_selector          = "div[data-test='tree-section']";
+const skill_selector            = "div[data-test='skill']";
+const skill_crown_selector      = " div[data-test='level-crown']";
+const skill_icon_selector       = " div[data-test='skill-icon']";
+const skill_tree_selector       = "div[data-test='skill-tree']";
+const global_practice_selector  = "a[data-test='global-practice']";
+
+const circle_selector           = "div > svg > > path";
+
+const complete_circle_color     = "#ffd900";
 
 const selectors = [
     'section_selector', section_selector,
     'skill_selector', skill_selector,
-    'skill_crown_selector', skill_crown_selector,
-    'prepend_btn_selector', prepend_btn_selector
+    'skill_crown_selector', skill_selector + skill_crown_selector,
+    'skill_icon_selector', skill_selector + skill_icon_selector,
+    'skill_tree_selector', skill_tree_selector,
+    'global_practice_selector', global_practice_selector
 ];
 
 const page_url = "/learn";
@@ -50,36 +58,78 @@ function ShowNode(node) {
 }
 
 function mylog(s) {
-    // TODO
     console.log("[HCS] " + s);
 }
 
+function DP(s) {
+    if (IsDP) {
+        mylog(s);
+    }
+}
+
 function Toggle (target) {
-    var t0 = performance.now()
+    //var t0 = performance.now()
     var ret;
     if (IsHiding) {
         ret = ActOnTarget(target, HideNode);
     } else {
         ret = ActOnTarget(target, ShowNode);
     }
-    var t1 = performance.now()
-    mylog("Call to HCS Toggle took " + (t1 - t0) + " milliseconds.")
+    //var t1 = performance.now()
+    //mylog("Call to HCS Toggle took " + (t1 - t0) + " milliseconds.")
     return ret;
 }
 
 function IsAllSkillComplete(node) {
-    var all_skills = node.find(skill_selector).length;
-    var crowns = node.find(skill_crown_selector);
-    var completed_skills = 0;
+    var skills = node.find(skill_selector);
+    //var all_skills = node.find(skill_selector).length;
+    //var skill_crowns = node.find(skill_crown_selector);
+    //var skill_icons = node.find(skill_icon_selector);
+    var completed_count = 0;
+    var total_count = skills.length;
+    /*
+    if ((skills.length != skill_crowns.length) ||
+        (skills.length != skill_icons)) {
+        mylog("Error: count of skills, crowns, icons are not matched");
+        return false;
+    }*/
+    skills.each(function(index, element) {
+        // Print name of the skill
+        name = $(this).find("div._3PSt5").last().html();
+
+        // Check if there is crown level
+        crown = $(element).find(skill_crown_selector);
+        if (crown.length == 0) {
+            // Invalid skill
+            return false;
+        }
+        level = crown.html();
+        if (level == 5) {
+            // Max level
+            completed_count += 1;
+            return;
+        }
+        // Check the outter circle color: complete -> gold, incomplete -> gray
+        circle = $(this).find(circle_selector).first();
+        circle_color = circle.attr('fill');
+        DP(name + circle_color)
+        if (circle_color == complete_circle_color) {
+            completed_count += 1;
+        }
+    });
+    if (completed_count != 0) {
+        //mylog("skills: " + total_count + ", crowns:" + completed_count);
+    }
+    /* Get level from crown
     crowns.each(function(index, element) {
         // Get crown level of each skill
         var str = element.innerHTML.replace(/\s/g, '');;
         if (str == "5") {
-            completed_skills++;
+            completed_count++;
         }
     });
-    //mylog("skills: " + all_skills + ", 5-crown_count: " + completed_skills);
-    if (all_skills == completed_skills) {
+    */
+    if (total_count == completed_count) {
         return true;
     }
     return false;
@@ -98,20 +148,29 @@ function ActOnTarget(target, action) {
     if (sections == null) {
         consol.log("Error, section not found");
     }
+    DP("Start checking sections");
     sections.each(function(index, element) {
+        DP("Section check section: " + index);
+        // Remove all hline
+        hlines = $(this).find("div > hr");
+        hlines.each(function(index, element) {
+            action($(this));
+        });
         if (IsAllSkillComplete($(this))) {
             action($(this));
             total_count += 1;
+            DP("Section " + index + "all done");
             return;
         }
         // Hide parent (row) if parent's child are all completed
         var all_skills = $(this).find(skill_selector)
         all_skills.each(function(index, element) {
+            DP("Row check");
             var parent_row = $(this).parent();
             if (IsAllSkillComplete(parent_row)) {
                 action(parent_row);
             }
-            total_count += 1
+            total_count += 1;
         });
     });
     return total_count;
@@ -128,17 +187,29 @@ function ToggleBtnClickAction (BtnEvent) {
 
 function InsertBtn() {
     if ($('#HCSToggleBtn').length != 0) {
+        // Inserted
         return;
     }
-    var node = document.createElement ('div');
-    node.innerHTML = '<button id="HCSToggleBtn" class="HCSBtn" type="button">Toggle completed skills</button>';
-    node.setAttribute ('id', 'HCSContainer');
-    $(prepend_btn_selector)[0].prepend(node);
+    gp_btn = $(global_practice_selector);
+    floating_div = gp_btn.parent();
+
+    var btn = $('<button>HCS</button>')
+        .attr('class', 'HCSBtn')
+        .attr('id', 'HCSToggleBtn')
+        .attr('type', 'button');
+    floating_div.append(btn)
+
+    var height = gp_btn.outerHeight();
+    var height2 = btn.outerHeight();
+    scale = (height/height2 + 1)/2;
+    btn.css('transform', 'scale(' + scale + ')');
+
+    // get size of global-practice btn
+
     $("#HCSToggleBtn").on( "click", ToggleBtnClickAction);
     mylog("Inserted buttons");
     // Scroll to top
     if (IsHiding) {
-        //$('html, body')[0].scrollIntoView(true);
         $('html, body').animate({ scrollTop: 0 }, 'fast');
         mylog("Scroll Top");
     }
@@ -176,10 +247,17 @@ const ObsvrAction = function(mutationsList, observer) {
 
 var observer = new MutationObserver(ObsvrAction);
 
+/*
+      position: fixed;
+      bottom:100px;
+      left: 60px;
+      z-index: 9999";
+      */
 // Button css
 var styles = `
     .HCSBtn {
       display: inline-block;
+      margin-left: 30px;
       padding: 6px 8px;
       font-size: 17px;
       font-weight: bold;
