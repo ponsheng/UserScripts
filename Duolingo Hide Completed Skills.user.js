@@ -28,7 +28,7 @@ const global_practice_selector  = "a[data-test='global-practice']";
 
 const circle_selector           = "div > svg > > path";
 
-const complete_circle_color     = "#ffd900";
+const complete_circle_color     = "#ffd900"; // gold color, gray for incomplete ones
 
 const selectors = [
     'section_selector', section_selector,
@@ -73,8 +73,10 @@ function Toggle (target) {
     var ret;
     if (IsHiding) {
         ret = ActOnTarget(target, HideNode);
+        mylog("Hide " + ret + " nodes");
     } else {
         ret = ActOnTarget(target, ShowNode);
+        mylog("Show " + ret + " nodes");
     }
     //var t1 = performance.now()
     //mylog("Call to HCS Toggle took " + (t1 - t0) + " milliseconds.")
@@ -96,24 +98,25 @@ function IsAllSkillComplete(node) {
     }*/
     skills.each(function(index, element) {
         // Print name of the skill
-        name = $(this).find("div._3PSt5").last().html();
+        // class name is floating
+        //var name = $(this).find("div._3PSt5").last().html();
 
         // Check if there is crown level
-        crown = $(element).find(skill_crown_selector);
+        var crown = $(element).find(skill_crown_selector);
         if (crown.length == 0) {
             // Invalid skill
             return false;
         }
-        level = crown.html();
+        var level = crown.html();
         if (level == 5) {
             // Max level
             completed_count += 1;
             return;
         }
         // Check the outter circle color: complete -> gold, incomplete -> gray
-        circle = $(this).find(circle_selector).first();
-        circle_color = circle.attr('fill');
-        DP(name + circle_color)
+        var circle = $(this).find(circle_selector).first();
+        var circle_color = circle.attr('fill');
+        //DP("Skill " +name + " has circle of color " + circle_color);
         if (circle_color == complete_circle_color) {
             completed_count += 1;
         }
@@ -147,13 +150,13 @@ function ActOnTarget(target, action) {
     // Check sections
     var sections = $(section_selector);
     if (sections == null) {
-        consol.log("Error, section not found");
+        mylog("Error, section not found");
     }
     DP("Start checking sections");
     sections.each(function(index, element) {
         DP("Section check section: " + index);
         // Remove all hline
-        hlines = $(this).find("div > hr");
+        var hlines = $(this).find("div > hr");
         hlines.each(function(index, element) {
             action($(this));
         });
@@ -166,10 +169,10 @@ function ActOnTarget(target, action) {
         // Hide parent (row) if parent's child are all completed
         var all_skills = $(this).find(skill_selector)
         all_skills.each(function(index, element) {
-            DP("Row check");
             var parent_row = $(this).parent();
             if (IsAllSkillComplete(parent_row)) {
                 action(parent_row);
+                DP("Row completed");
             }
             total_count += 1;
         });
@@ -191,8 +194,8 @@ function InsertBtn() {
         // Inserted
         return;
     }
-    gp_btn = $(global_practice_selector);
-    floating_div = gp_btn.parent();
+    var gp_btn = $(global_practice_selector);
+    var floating_div = gp_btn.parent();
 
     var btn = $('<button>HCS</button>')
         .attr('class', 'HCSBtn')
@@ -202,7 +205,7 @@ function InsertBtn() {
 
     var height = gp_btn.outerHeight();
     var height2 = btn.outerHeight();
-    scale = (height/height2 + 1)/2;
+    var scale = (height/height2 + 1)/2;
     btn.css('transform', 'scale(' + scale + ')');
 
     // get size of global-practice btn
