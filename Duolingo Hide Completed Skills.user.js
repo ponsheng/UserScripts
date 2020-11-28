@@ -7,6 +7,7 @@
 // @match        https://www.duolingo.com/*
 // @grant        none
 // @require      http://code.jquery.com/jquery-3.4.1.min.js
+// @license      GPL-3.0-or-later; https://www.gnu.org/licenses/gpl-3.0.txt
 // ==/UserScript==
 
 var IsHiding = true;
