@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duolingo Hide Completed Skills
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  A Duolingo userscripts that toggle hide/show completed skills
 // @author       Ponsheng
 // @match        https://www.duolingo.com/*
@@ -10,25 +10,30 @@
 // @license      GPL-3.0-or-later; https://www.gnu.org/licenses/gpl-3.0.txt
 // ==/UserScript==
 
+/* jshint esversion: 6 */
+/* globals $, jQuery */
 var IsHiding = true;
 var IsDebug = false;
-var IsDP    = false; // debug print
+var IsDP = false; // debug print
 
 // TODO There is a bug when complete a skill, it just disapear with another incomplete skill.
 //          > seems not happened for I times
 // TODO Reduce monitor sensitivity, reduce check call
 
 // Selectors
-const section_selector          = "div[data-test='tree-section']";
-const skill_selector            = "div[data-test='skill']";
-const skill_crown_selector      = " div[data-test='level-crown']";
-const skill_icon_selector       = " div[data-test='skill-icon']";
-const skill_tree_selector       = "div[data-test='skill-tree']";
-const global_practice_selector  = "a[data-test='global-practice']";
+const section_selector = "div[data-test='tree-section']";
+const skill_selector = "div[data-test='skill']";
+const skill_tree_selector = "div[data-test='skill-tree']";
+const global_practice_selector = "a[data-test='global-practice']";
 
-const circle_selector           = "div > svg > > path";
+const circle_selector = "div > svg > > path";
+// under skill icon
+const skill_crown_selector = " div[data-test='level-crown']";
+const skill_icon_selector = " div[data-test='skill-icon']";
+const skill_icon_child_seltr = skill_icon_selector + " > div";
+const skill_static_icon_seltr = skill_icon_selector + " div > svg[viewBox] > image";
 
-const complete_circle_color     = "#ffd900"; // gold color, gray for incomplete ones
+const complete_circle_color = "#ffd900"; // gold color, gray for incomplete ones
 
 const selectors = [
     'section_selector', section_selector,
@@ -39,10 +44,15 @@ const selectors = [
     'global_practice_selector', global_practice_selector
 ];
 
+const completed_ico_cls_set = new Set();
+
 const page_url = "/learn";
 
 // Options for the observer
-const observer_config = {childList: true, subtree: true};
+const observer_config = {
+    childList: true,
+    subtree: true
+};
 
 // Target to search skills
 var target_body;
@@ -54,6 +64,7 @@ var newest_skill;
 function HideNode(node) {
     node.hide();
 }
+
 function ShowNode(node) {
     node.show();
 }
@@ -68,7 +79,7 @@ function DP(s) {
     }
 }
 
-function Toggle (target) {
+function Toggle(target) {
     //var t0 = performance.now()
     var ret;
     if (IsHiding) {
@@ -85,21 +96,21 @@ function Toggle (target) {
 
 function IsAllSkillComplete(node) {
     var skills = node.find(skill_selector);
-    //var all_skills = node.find(skill_selector).length;
-    //var skill_crowns = node.find(skill_crown_selector);
-    //var skill_icons = node.find(skill_icon_selector);
     var completed_count = 0;
     var total_count = skills.length;
+
     /*
     if ((skills.length != skill_crowns.length) ||
         (skills.length != skill_icons)) {
         mylog("Error: count of skills, crowns, icons are not matched");
         return false;
     }*/
+
     skills.each(function(index, element) {
-        // Print name of the skill
-        // class name is floating
-        //var name = $(this).find("div._3PSt5").last().html();
+        // For debug: Print name of the skill. (beware of the floating class name)
+        //var name = $(this).find("div._2OhdT").last().html();
+
+        var classes = $(element).find(skill_icon_child_seltr).first().attr("class");
 
         // Check if there is crown level
         var crown = $(element).find(skill_crown_selector);
@@ -107,32 +118,42 @@ function IsAllSkillComplete(node) {
             // Invalid skill
             return false;
         }
+
+        // Complete skill if level = 5
         var level = crown.html();
         if (level == 5) {
             // Max level
+            completed_ico_cls_set.add(classes);
             completed_count += 1;
             return;
         }
+
+        // Complete skill if surrounded by gold circle (deprecated)
         // Check the outter circle color: complete -> gold, incomplete -> gray
-        var circle = $(this).find(circle_selector).first();
+        var circle = $(element).find(circle_selector).first();
         var circle_color = circle.attr('fill');
         //DP("Skill " +name + " has circle of color " + circle_color);
         if (circle_color == complete_circle_color) {
             completed_count += 1;
+            completed_ico_cls_set.add(classes);
+            return;
+        }
+
+        // Complete skill if there is a viewbox image
+        var icon = $(element).find(skill_static_icon_seltr);
+        if (icon.length > 0) {
+            // Check if class match
+            if (completed_ico_cls_set.has(classes)) {
+                completed_count += 1;
+            }
         }
     });
+
+    /*
     if (completed_count != 0) {
-        //mylog("skills: " + total_count + ", crowns:" + completed_count);
-    }
-    /* Get level from crown
-    crowns.each(function(index, element) {
-        // Get crown level of each skill
-        var str = element.innerHTML.replace(/\s/g, '');;
-        if (str == "5") {
-            completed_count++;
-        }
-    });
-    */
+        mylog("skills: " + total_count + ", crowns:" + completed_count);
+    }*/
+
     if (total_count == completed_count) {
         return true;
     }
@@ -167,7 +188,7 @@ function ActOnTarget(target, action) {
             return;
         }
         // Hide parent (row) if parent's child are all completed
-        var all_skills = $(this).find(skill_selector)
+        var all_skills = $(this).find(skill_selector);
         all_skills.each(function(index, element) {
             var parent_row = $(this).parent();
             if (IsAllSkillComplete(parent_row)) {
@@ -180,7 +201,7 @@ function ActOnTarget(target, action) {
     return total_count;
 }
 
-function ToggleBtnClickAction (BtnEvent) {
+function ToggleBtnClickAction(BtnEvent) {
     if (IsHiding) {
         IsHiding = false;
     } else {
@@ -201,20 +222,22 @@ function InsertBtn() {
         .attr('class', 'HCSBtn')
         .attr('id', 'HCSToggleBtn')
         .attr('type', 'button');
-    floating_div.append(btn)
+    floating_div.append(btn);
 
     var height = gp_btn.outerHeight();
     var height2 = btn.outerHeight();
-    var scale = (height/height2 + 1)/2;
+    var scale = (height / height2 + 1) / 2;
     btn.css('transform', 'scale(' + scale + ')');
 
     // get size of global-practice btn
 
-    $("#HCSToggleBtn").on( "click", ToggleBtnClickAction);
+    $("#HCSToggleBtn").on("click", ToggleBtnClickAction);
     mylog("Inserted buttons");
     // Scroll to top
     if (IsHiding) {
-        $('html, body').animate({ scrollTop: 0 }, 'fast');
+        $('html, body').animate({
+            scrollTop: 0
+        }, 'fast');
         mylog("Scroll Top");
     }
 }
@@ -236,7 +259,7 @@ const ObsvrAction = function(mutationsList, observer) {
         }
     }
     if (!AddNew) {
-        return ;
+        return;
     }
     // Use url to determine toggle or not
     if (window.location.pathname.localeCompare(page_url) != 0) {
@@ -293,9 +316,9 @@ function CheckSelector() {
     }
     var i;
     var err = false;
-    for (i = 0; i < selectors.length; i+=2) {
+    for (i = 0; i < selectors.length; i += 2) {
         var name = selectors[i];
-        var selector = selectors[i+1];
+        var selector = selectors[i + 1];
         var count = $(selector).length;
 
         if (count == 0) {
@@ -312,7 +335,7 @@ function CheckSelector() {
 }
 
 //$(document).ready(function() {
-$( window ).on( "load", function() {
+$(window).on("load", function() {
     mylog("Duolingo HCS enabled");
     target_body = $('body')[0];
 
@@ -340,10 +363,10 @@ $( window ).on( "load", function() {
     // Start observing the target node for configured mutations
     observer.observe(target_body, observer_config);
 
-    var styleSheet = document.createElement("style")
-    styleSheet.type = "text/css"
-    styleSheet.innerText = styles
-    document.head.appendChild(styleSheet)
+    var styleSheet = document.createElement("style");
+    styleSheet.type = "text/css";
+    styleSheet.innerText = styles;
+    document.head.appendChild(styleSheet);
 
     // Check selector changed
     if (IsDebug) {
