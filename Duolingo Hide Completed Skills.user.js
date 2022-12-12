@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         Duolingo Hide Completed Skills
 // @namespace    http://tampermonkey.net/
-// @version      1.1
+// @version      1.2
 // @description  A Duolingo userscripts that toggle hide/show completed skills
 // @author       Ponsheng
-// @match        https://www.duolingo.com/*
+// @match        https://preview.duolingo.com/learn
 // @grant        none
 // @require      http://code.jquery.com/jquery-3.4.1.min.js
 // @license      GPL-3.0-or-later; https://www.gnu.org/licenses/gpl-3.0.txt
