@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Duolingo Hide Completed Skills
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.3
 // @description  A Duolingo userscripts that toggle hide/show completed skills
 // @author       Ponsheng
 // @match        https://duolingo.com/learn
