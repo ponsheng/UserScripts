@@ -4,7 +4,7 @@
 // @version      1.3
 // @description  A Duolingo userscripts that toggle hide/show completed skills
 // @author       Ponsheng
-// @match        https://duolingo.com/learn
+// @match        https://www.duolingo.com/learn
 // @match        https://preview.duolingo.com/learn
 // @grant        none
 // @require      http://code.jquery.com/jquery-3.4.1.min.js
